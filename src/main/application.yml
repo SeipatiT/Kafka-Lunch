@@ -1,0 +1,4 @@
+kafka:
+  inputTopic: orders
+  outputTopic: order_processing
+

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Menu Order</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #fafafa;
+      margin: 0;
+      padding: 20px;
+    }
+    /* Style for the top Menu button */
+    .menu-button {
+      background-color: #007BFF;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      display: block;
+      margin: 20px auto;
+    }
+    .menu-button:hover {
+      background-color: #0056b3;
+    }
+    /* Style for the menu container */
+    .menu-container {
+      max-width: 600px;
+      margin: 40px auto 0;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .menu-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+    .item-name {
+      font-size: 18px;
+      font-weight: 500;
+    }
+    button.order-btn {
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    button.order-btn:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Initial Modal to ask for name -->
+<div id="nameModal" class="modal" style="display: flex;">
+  <div class="modal-content">
+    <h2>Enter Your Name</h2>
+    <input type="text" id="customerName" placeholder="Your name">
+    <div class="modal-actions">
+      <button onclick="submitName()">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Menu container with order items (hidden until name is entered) -->
+<div class="menu-container" id="menuContainer">
+  <h1>Our Menu</h1>
+  <div class="menu-item">
+    <div class="item-name">Burger</div>
+    <input type="number" class="qty-input" placeholder="Qty" min="1" value="1">
+    <button class="order-btn" onclick="openOrderModal(this, 'Burger')">Order</button>
+  </div>
+  <div class="menu-item">
+    <div class="item-name">Pizza</div>
+    <input type="number" placeholder="Qty" min="1" class="qty-input" value="1">
+    <button class="order-btn" onclick="openOrderModal(this, 'Pizza')">Order</button>
+  </div>
+  <div class="menu-item">
+    <div class="item-name">Salad</div>
+    <input type="number" placeholder="Qty" min="1" class="qty-input" value="1">
+    <button class="order-btn" onclick="openOrderModal(this, 'Salad')">Order</button>
+  </div>
+  <div class="menu-item">
+    <div class="item-name">Chicken</div>
+    <input type="number" placeholder="Qty" min="1" class="qty-input" value="1">
+    <button class="order-btn" onclick="openOrderModal(this, 'Chicken')">Order</button>
+  </div>
+
+  <!-- Modal for confirming order -->
+  <div id="orderModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h2>Confirm Your Order</h2>
+      <p id="modalItemName"></p>
+      <div class="modal-actions">
+        <button onclick="submitOrder()">Submit Order</button>
+        <button onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let customerName = '';
+  let selectedItem = '';
+  let selectedQty = 1;
+
+  function submitName() {
+    customerName = document.getElementById('customerName').value.trim();
+
+    if (!customerName) {
+      alert('Please enter your name.');
+      return;
+    }
+
+    // Hide the name modal and show the menu
+    document.getElementById('nameModal').style.display = 'none';
+    document.getElementById('menuContainer').style.display = 'block';
+  }
+
+  function openOrderModal(button, item) {
+    const menuItem = button.closest('.menu-item');
+    const qtyInput = menuItem.querySelector('.qty-input');
+    selectedQty = parseInt(qtyInput.value) || 1;
+    selectedItem = item;
+
+    document.getElementById('modalItemName').textContent = `Item: ${item} (Qty: ${selectedQty})`;
+    document.getElementById('orderModal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('orderModal').style.display = 'none';
+  }
+
+  function submitOrder() {
+    const orderRequest = {
+      customerName: customerName,
+      item: selectedItem,
+      quantity: selectedQty
+    };
+
+    fetch('/api/v1/order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(orderRequest)
+    })
+            .then(response => response.text())
+            .then(data => {
+              alert('Order submitted successfully: ' + data);
+              closeModal();
+            })
+            .catch(error => {
+              console.error('Error placing order:', error);
+              alert('Error placing order: ' + error.message);
+            });
+  }
+</script>
+</body>
+</html>
