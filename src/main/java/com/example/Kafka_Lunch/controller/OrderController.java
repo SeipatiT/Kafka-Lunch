@@ -39,16 +39,13 @@ public class OrderController {
         return "Order placed: " + order.getItem();
     }
 
-    @PostMapping
+    // Make sure there's no conflict with the duplicate @PostMapping annotation
+    @PostMapping("/status")
     @ResponseBody
     @Operation(summary = "Check an order", description = "Order status")
-    public String getOrderStatus(@RequestBody Order request) {
-
-        Order order = new Order(orderId, request.item(), "Pending");
-
-        kafkaTemplate.send("orders", order); // Now Kafka will correctly serialize it
-
-        return "Order placed: " + order.getItem();
+    public String getOrderStatus(@RequestBody OrderRequest request) {
+        // In a real system, you'd look up the order status in a database
+        return "Order for " + request.customerName() + " is being processed";
     }
 }
 
