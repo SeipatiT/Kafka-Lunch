@@ -1,6 +1,7 @@
 package com.example.Kafka_Lunch.controller;
 import com.example.Kafka_Lunch.model.Order;
 import com.example.Kafka_Lunch.model.OrderRequest;
+import com.example.Kafka_Lunch.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -14,28 +15,24 @@ import java.util.UUID;
 @Tag(name = "Order Controller", description = "APIs for placing and managing orders")
 public class OrderController {
     private final KafkaTemplate<String, Order> kafkaTemplate;
-    Order order;
+    private final OrderService orderService;
 
-    public OrderController(KafkaTemplate<String, Order> kafkaTemplate) {
+    public OrderController(KafkaTemplate<String, Order> kafkaTemplate, OrderService orderService) {
         this.kafkaTemplate = kafkaTemplate;
+        this.orderService = orderService;
     }
 
     @GetMapping("/index")
     public String index() {
-        return "next.html"; // Refers to index.html in templates folder
+        return "index.html"; // Return the template name without .html extension
     }
-
 
     @PostMapping
     @ResponseBody  // <--- This annotation makes the returned string be the response body.
     @Operation(summary = "Place an order", description = "Submit an order for Burger, Pizza, or Salad")
     public String placeOrder(@RequestBody OrderRequest request) {
-        String orderId = UUID.randomUUID().toString();
-
-        order = new Order(orderId, request.customerName(), request.item(),  "Pending", request.quantity());
-
-        kafkaTemplate.send("orders", order); // Now Kafka will correctly serialize it
-
+        // Use OrderService to process the order
+        Order order = orderService.processOrder(request);
         return "Order placed: " + order.getItem();
     }
 
@@ -48,7 +45,3 @@ public class OrderController {
         return "Order for " + request.customerName() + " is being processed";
     }
 }
-
-
-
-

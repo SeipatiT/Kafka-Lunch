@@ -15,6 +15,14 @@ public class KafkaLunchApplication {
         SpringApplication.run(KafkaLunchApplication.class, args);
     }
 
+    @Bean
+    CommandLineRunner commandLineRunner(KafkaTemplate<String, Order> kafkaTemplate){
+        return args -> {
+            System.out.println("Application started successfully!");
+            // You can add test messages here if needed
+        };
+    }
+
 //    @Bean
 //    CommandLineRunner commandLineRunner(KafkaTemplate<String, Order> kafkaTemplate){
 //        return args -> {

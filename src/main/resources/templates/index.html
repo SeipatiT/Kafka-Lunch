@@ -94,32 +94,6 @@
             display: flex;
             justify-content: space-between;
         }
-
-        .order-status {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-        }
-
-        .status-pending {
-            color: #856404;
-            background-color: #fff3cd;
-            border-color: #ffeeba;
-        }
-
-        .status-accepted {
-            color: #155724;
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-        }
-
-        .status-rejected {
-            color: #721c24;
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-        }
     </style>
 </head>
 <body>
@@ -157,13 +131,6 @@
         <div class="item-name">Chicken</div>
         <input type="number" placeholder="Qty" min="1" class="qty-input" value="1">
         <button class="order-btn" onclick="openOrderModal(this, 'Chicken')">Order</button>
-    </div>
-
-    <!-- Order Status Section -->
-    <div class="order-status" id="orderStatusSection" style="display: none;">
-        <h2>Your Order Status</h2>
-        <p id="orderDetails"></p>
-        <p>Status: <span id="orderStatusText" class="status-pending">Pending</span></p>
     </div>
 
     <!-- Modal for confirming order -->
@@ -213,7 +180,7 @@
             console.log('Connected to WebSocket: ' + frame);
             // Subscribe to order updates for this customer
             stompClient.subscribe('/topic/orders/' + customerName, function (message) {
-                updateOrderStatus(JSON.parse(message.body));
+                console.log('Received message:', message.body);
             });
         }, function (error) {
             console.log('WebSocket error: ' + error);
@@ -250,35 +217,25 @@
         })
             .then(response => response.text())
             .then(data => {
-                // Show the order status section
-                document.getElementById('orderStatusSection').style.display = 'block';
-                document.getElementById('orderDetails').textContent =
-                    `Customer: ${customerName}, Item: ${selectedItem}, Quantity: ${selectedQty}`;
-                document.getElementById('orderStatusText').textContent = 'Pending';
-                document.getElementById('orderStatusText').className = 'status-pending';
+                // Store order details in sessionStorage to access them on the next page
+                sessionStorage.setItem('orderDetails', JSON.stringify({
+                    customerName: customerName,
+                    item: selectedItem,
+                    quantity: selectedQty
+                }));
 
                 alert('Order submitted successfully: ' + data);
                 closeModal();
+
+                // Redirect to next.html after a short delay
+                setTimeout(() => {
+                    window.location.href = '/api/v1/messages/next';
+                }, 1000);
             })
             .catch(error => {
                 console.error('Error placing order:', error);
                 alert('Error placing order: ' + error.message);
             });
-    }
-
-    function updateOrderStatus(order) {
-        document.getElementById('orderStatusSection').style.display = 'block';
-        document.getElementById('orderStatusText').textContent = order.status;
-
-        // Update the status class for styling
-        const statusElement = document.getElementById('orderStatusText');
-        if (order.status === 'Pending') {
-            statusElement.className = 'status-pending';
-        } else if (order.status === 'Accepted') {
-            statusElement.className = 'status-accepted';
-        } else if (order.status === 'Rejected') {
-            statusElement.className = 'status-rejected';
-        }
     }
 </script>
 </body>
