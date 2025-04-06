@@ -17,11 +17,14 @@ public class KafkaTopicConfig {
     public NewTopic confirmationTopic() {
         return TopicBuilder.name("order-confirmations").build();
     }
+
+    @Bean
+    public NewTopic statusUpdateTopic() {
+        return TopicBuilder.name("order-status-updates").build();
+    }
 //    @Bean
 //    public NewTopic foodSpotTopic(){
 //        return TopicBuilder.name("foodspot")
 //                .build();
 //    }
-
-
 }

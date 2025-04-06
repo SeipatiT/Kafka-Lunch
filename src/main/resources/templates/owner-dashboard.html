@@ -324,7 +324,12 @@
         if (existingRow) {
             // Update existing row
             const cells = existingRow.cells;
-            cells[4].innerHTML = `<span class="status-${order.status.toLowerCase()}">${order.status}</span>`;
+            // Clear the status cell and create a new span with correct class
+            cells[4].innerHTML = '';
+            const statusSpan = document.createElement('span');
+            statusSpan.textContent = order.status;
+            statusSpan.className = `status-${order.status.toLowerCase()}`;
+            cells[4].appendChild(statusSpan);
 
             // Update the select dropdown value
             const selectEl = existingRow.querySelector('select');

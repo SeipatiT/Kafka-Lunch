@@ -15,6 +15,8 @@ public class OrderManagementService {
 
     private final KafkaTemplate<String, Order> kafkaTemplate;
     private final Map<String, Order> orders = new ConcurrentHashMap<>();
+    private static final String ORDER_CONFIRMATIONS_TOPIC = "order-confirmations";
+    private static final String ORDER_STATUS_UPDATES_TOPIC = "order-status-updates";
 
     public OrderManagementService(KafkaTemplate<String, Order> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
@@ -48,8 +50,27 @@ public class OrderManagementService {
         orders.put(orderId, order);
 
         // Publish the updated order to the order-confirmations topic
-        kafkaTemplate.send("order-confirmations", order);
+        kafkaTemplate.send(ORDER_CONFIRMATIONS_TOPIC, order);
 
         return order;
+    }
+
+    // Search for orders by item name (case-insensitive) and update their status
+    public List<Order> searchAndUpdateOrdersByItem(String item, String newStatus) {
+        List<Order> matchingOrders = orders.values().stream()
+                .filter(order -> item.equalsIgnoreCase(order.getItem()))
+                .collect(Collectors.toList());
+
+        // Update status of matching orders
+        matchingOrders.forEach(order -> {
+            order.setStatus(newStatus);
+            orders.put(order.getId(), order);
+
+            // Publish to both topics
+            kafkaTemplate.send(ORDER_CONFIRMATIONS_TOPIC, order);
+            kafkaTemplate.send(ORDER_STATUS_UPDATES_TOPIC, order);
+        });
+
+        return matchingOrders;
     }
 }

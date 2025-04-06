@@ -45,4 +45,11 @@ public class RestaurantOwnerController {
     public Order updateOrderStatus(@PathVariable String orderId, @RequestParam String status) {
         return orderManagementService.updateOrderStatus(orderId, status);
     }
+
+    @PostMapping("/orders/search-and-update")
+    @ResponseBody
+    @Operation(summary = "Search and update orders by item", description = "Search for orders by item name and update their status")
+    public List<Order> searchAndUpdateOrdersByItem(@RequestParam String item, @RequestParam String newStatus) {
+        return orderManagementService.searchAndUpdateOrdersByItem(item, newStatus);
+    }
 }
