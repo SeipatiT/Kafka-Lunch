@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Owner Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            overflow: auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .filter-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-radius: 5px;
+        }
+
+        .filter-bar select, .filter-bar button {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+
+        .filter-bar button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .filter-bar button:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table th, table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .status-selector {
+            display: flex;
+        }
+
+        .status-selector select {
+            flex-grow: 1;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+
+        .update-btn {
+            padding: 5px 10px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .update-btn:hover {
+            background-color: #0b7dda;
+        }
+
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .status-accepted {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .status-rejected {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .status-completed {
+            background-color: #cce5ff;
+            color: #004085;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .refresh-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .refresh-btn:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Restaurant Owner Dashboard</h1>
+
+    <div class="filter-bar">
+        <div>
+            <label for="filter-select">Filter by item:</label>
+            <select id="filter-select">
+                <option value="">All Items</option>
+                <option value="Burger">Burgers</option>
+                <option value="Pizza">Pizzas</option>
+                <option value="Salad">Salads</option>
+                <option value="Chicken">Chicken</option>
+            </select>
+            <button id="apply-filter">Apply Filter</button>
+        </div>
+        <div>
+            <button id="refresh-orders">Refresh Orders</button>
+        </div>
+    </div>
+
+    <table id="orders-table">
+        <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Current Status</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody id="orders-list">
+        <!-- Orders will be populated here -->
+        </tbody>
+    </table>
+
+    <button class="refresh-btn" id="bottom-refresh">Refresh Orders</button>
+</div>
+
+<!-- Add SockJS and STOMP for WebSockets -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp-websocket/2.3.3/stomp.min.js"></script>
+
+<script>
+    let stompClient = null;
+
+    function connect() {
+        var socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            console.log('Connected to WebSocket: ' + frame);
+
+            // Subscribe to orders topic for real-time updates
+            stompClient.subscribe('/topic/orders', function (message) {
+                const order = JSON.parse(message.body);
+                updateOrderInTable(order);
+            });
+        }, function (error) {
+            console.log('WebSocket error: ' + error);
+            setTimeout(connect, 5000); // Try to reconnect after 5 seconds
+        });
+    }
+
+    function loadAllOrders() {
+        fetch('/api/v1/owner/orders')
+            .then(response => response.json())
+            .then(orders => {
+                const ordersList = document.getElementById('orders-list');
+                ordersList.innerHTML = ''; // Clear existing orders
+                orders.forEach(order => {
+                    ordersList.appendChild(createOrderRow(order));
+                });
+            })
+            .catch(error => {
+                console.error('Error loading orders:', error);
+                alert('Failed to load orders. Please try again.');
+            });
+    }
+
+    function loadOrdersByItem(item) {
+        fetch(`/api/v1/owner/orders/filter?item=${encodeURIComponent(item)}`)
+            .then(response => response.json())
+            .then(orders => {
+                const ordersList = document.getElementById('orders-list');
+                ordersList.innerHTML = ''; // Clear existing orders
+                orders.forEach(order => {
+                    ordersList.appendChild(createOrderRow(order));
+                });
+            })
+            .catch(error => {
+                console.error('Error loading filtered orders:', error);
+                alert('Failed to load filtered orders. Please try again.');
+            });
+    }
+
+    function updateOrderStatus(orderId, status) {
+        fetch(`/api/v1/owner/orders/${orderId}/status?status=${encodeURIComponent(status)}`, {
+            method: 'POST'
+        })
+            .then(response => response.json())
+            .then(updatedOrder => {
+                updateOrderInTable(updatedOrder);
+                alert(`Order ${orderId} status updated to ${status}`);
+            })
+            .catch(error => {
+                console.error('Error updating order status:', error);
+                alert('Failed to update order status. Please try again.');
+            });
+    }
+
+    function createOrderRow(order) {
+        const row = document.createElement('tr');
+
+        const idCell = document.createElement('td');
+        idCell.textContent = order.id;
+        row.appendChild(idCell);
+
+        const customerCell = document.createElement('td');
+        customerCell.textContent = order.customerName;
+        row.appendChild(customerCell);
+
+        const itemCell = document.createElement('td');
+        itemCell.textContent = order.item;
+        row.appendChild(itemCell);
+
+        const quantityCell = document.createElement('td');
+        quantityCell.textContent = order.quantity;
+        row.appendChild(quantityCell);
+
+        const statusCell = document.createElement('td');
+        const statusSpan = document.createElement('span');
+        statusSpan.textContent = order.status;
+        statusSpan.className = `status-${order.status.toLowerCase()}`;
+        statusCell.appendChild(statusSpan);
+        row.appendChild(statusCell);
+
+        const actionsCell = document.createElement('td');
+        const statusSelector = document.createElement('div');
+        statusSelector.className = 'status-selector';
+
+        const selectEl = document.createElement('select');
+        const statuses = ['Pending', 'Accepted', 'Rejected', 'Completed'];
+        statuses.forEach(status => {
+            const option = document.createElement('option');
+            option.value = status;
+            option.textContent = status;
+            if (order.status === status) {
+                option.selected = true;
+            }
+            selectEl.appendChild(option);
+        });
+        statusSelector.appendChild(selectEl);
+
+        const updateBtn = document.createElement('button');
+        updateBtn.textContent = 'Update';
+        updateBtn.className = 'update-btn';
+        updateBtn.addEventListener('click', () => {
+            updateOrderStatus(order.id, selectEl.value);
+        });
+        statusSelector.appendChild(updateBtn);
+
+        actionsCell.appendChild(statusSelector);
+        row.appendChild(actionsCell);
+
+        row.id = `order-${order.id}`;
+        return row;
+    }
+
+    function updateOrderInTable(order) {
+        const existingRow = document.getElementById(`order-${order.id}`);
+
+        if (existingRow) {
+            // Update existing row
+            const cells = existingRow.cells;
+            cells[4].innerHTML = `<span class="status-${order.status.toLowerCase()}">${order.status}</span>`;
+
+            // Update the select dropdown value
+            const selectEl = existingRow.querySelector('select');
+            if (selectEl) {
+                selectEl.value = order.status;
+            }
+        } else {
+            // Add new row if it doesn't exist
+            const ordersList = document.getElementById('orders-list');
+            ordersList.appendChild(createOrderRow(order));
+        }
+    }
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Connect to WebSocket
+        connect();
+
+        // Load initial orders
+        loadAllOrders();
+
+        // Set up event listeners
+        document.getElementById('apply-filter').addEventListener('click', function() {
+            const selectedItem = document.getElementById('filter-select').value;
+            if (selectedItem) {
+                loadOrdersByItem(selectedItem);
+            } else {
+                loadAllOrders();
+            }
+        });
+
+        document.getElementById('refresh-orders').addEventListener('click', loadAllOrders);
+        document.getElementById('bottom-refresh').addEventListener('click', loadAllOrders);
+    });
+</script>
+</body>
+</html>
