@@ -10,6 +10,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 @Controller
@@ -73,5 +76,39 @@ public class OrderController {
         }
 
         return ResponseEntity.ok(order);
+    }
+
+    @PostMapping("/bulk")
+    @ResponseBody
+    @Operation(summary = "Create multiple orders at once", description = "Generate a specified number of orders with random customer names and items")
+    public ResponseEntity<List<Order>> createBulkOrders(@RequestParam(defaultValue = "100") int count) {
+        List<Order> createdOrders = new ArrayList<>();
+
+        // Array of sample names (first names only)
+        String[] customerNames = {
+                "John", "Jane", "Alex", "Emma", "Michael", "Olivia", "William", "Sophia",
+                "James", "Isabella", "Robert", "Mia", "David", "Charlotte", "Joseph", "Amelia",
+                "Daniel", "Harper", "Matthew", "Evelyn", "Sarah", "Thomas", "Emily", "Kevin",
+                "Anna", "George", "Lisa", "Steven", "Mary", "Chris", "Laura", "Andrew"
+        };
+
+        String[] items = {"BURGER", "PIZZA", "SALAD","CHICKEN"};
+        Random random = new Random();
+
+        // Generate the specified number of orders
+        for (int i = 0; i < count; i++) {
+            String customerName = customerNames[random.nextInt(customerNames.length)];
+            // Add index to ensure uniqueness when same name is selected multiple times
+            customerName = customerName + "_" + i;
+
+            String item = items[random.nextInt(items.length)];
+            int quantity = random.nextInt(5) + 1; // Random quantity between 1 and 5
+
+            OrderRequest request = new OrderRequest(customerName, item, quantity, null);
+            Order order = orderService.processOrder(request);
+            createdOrders.add(order);
+        }
+
+        return ResponseEntity.ok(createdOrders);
     }
 }
