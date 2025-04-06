@@ -49,8 +49,9 @@ public class OrderManagementService {
         order.setStatus(status);
         orders.put(orderId, order);
 
-        // Publish the updated order to the order-confirmations topic
+        // Publish the updated order to both topics
         kafkaTemplate.send(ORDER_CONFIRMATIONS_TOPIC, order);
+        kafkaTemplate.send(ORDER_STATUS_UPDATES_TOPIC, order);
 
         return order;
     }

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class OrderStatusListener {
 
-    @KafkaListener(topics = "order-status-updates", groupId = "status-update-group")
+    @KafkaListener(topics = "order-status-updates", groupId = "order-group")
     public void processStatusUpdate(Order order) {
         System.out.println("Status update received: Order ID " + order.getId() +
                 " - Item: " + order.getItem() +

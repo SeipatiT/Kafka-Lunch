@@ -70,19 +70,33 @@
         <p>Status: <span class="status" id="status">Pending</span></p>
     </div>
 
-    <p>Click refresh to get status updates</p>
+    <p>Status updates will appear automatically. You can also click the button below to check manually.</p>
     <button onclick="checkOrderStatus()" class="button">Refresh Status</button>
 </div>
 
+<!-- Add SockJS and STOMP for WebSockets -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp-websocket/2.3.3/stomp.min.js"></script>
+
 <script>
+    let customerName = '';
+    let itemOrdered = '';
+    let stompClient = null;
+
     // When the page loads, get order details from sessionStorage
     window.onload = function() {
         const orderDetails = JSON.parse(sessionStorage.getItem('orderDetails'));
 
         if (orderDetails) {
+            customerName = orderDetails.customerName;
+            itemOrdered = orderDetails.item;
+
             document.getElementById('customerName').textContent = 'Customer: ' + orderDetails.customerName;
             document.getElementById('itemOrdered').textContent = 'Item: ' + orderDetails.item;
             document.getElementById('quantity').textContent = 'Quantity: ' + orderDetails.quantity;
+
+            // Connect to WebSocket for real-time updates
+            connectWebSocket();
 
             // Check status immediately on page load
             checkOrderStatus();
@@ -91,6 +105,26 @@
         }
     };
 
+    function connectWebSocket() {
+        var socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            console.log('Connected to WebSocket: ' + frame);
+
+            // Subscribe to status updates for this specific customer and order item
+            const topicName = '/topic/status/' + customerName + '_' + itemOrdered;
+            console.log('Subscribing to: ' + topicName);
+
+            stompClient.subscribe(topicName, function (message) {
+                const orderUpdate = JSON.parse(message.body);
+                console.log('Received status update:', orderUpdate);
+                updateStatusDisplay(orderUpdate.status);
+            });
+        }, function (error) {
+            console.error('WebSocket connection error:', error);
+        });
+    }
+
     function checkOrderStatus() {
         const orderDetails = JSON.parse(sessionStorage.getItem('orderDetails'));
         if (!orderDetails) {
@@ -98,8 +132,8 @@
             return;
         }
 
-        // Call your API endpoint to get the current status
-        fetch(`/api/v1/order/status?customerName=${encodeURIComponent(orderDetails.customerName)}&item=${encodeURIComponent(orderDetails.item)}`)
+        // Call the API endpoint to get the current status
+        fetch(`/api/v1/messages/orderstatus?customerName=${encodeURIComponent(orderDetails.customerName)}&item=${encodeURIComponent(orderDetails.item)}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to fetch order status');
@@ -126,6 +160,9 @@
         } else if (status === 'Rejected') {
             statusElement.style.backgroundColor = '#f8d7da';
             statusElement.style.color = '#721c24';
+        } else if (status === 'Completed') {
+            statusElement.style.backgroundColor = '#cce5ff';
+            statusElement.style.color = '#004085';
         } else {
             // Pending or other status
             statusElement.style.backgroundColor = '#fff3cd';
