@@ -38,8 +38,8 @@ public class KafkaConsumerConfig {
         configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         configProps.put(ConsumerConfig.GROUP_ID_CONFIG, "order-group");
         configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        configProps.put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
-                "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor");
+//        configProps.put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
+//                "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor");
 
         JsonDeserializer<Order> deserializer = new JsonDeserializer<>(Order.class);
         deserializer.addTrustedPackages("*"); // Allows deserialization of all packages
