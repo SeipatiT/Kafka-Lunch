@@ -9,6 +9,6 @@ public class LogConsumer {
     @KafkaListener(topics = "application-logs", groupId = "log-group")
     public void processLog(String log) {
         // Process log message as needed
-        System.out.println("Log received: " + log);
+        System.out.println("Log received via Kafka listener: " + log);
     }
 }

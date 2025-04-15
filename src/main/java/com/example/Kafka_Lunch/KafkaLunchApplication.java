@@ -1,6 +1,7 @@
 package com.example.Kafka_Lunch;
 
 import com.example.Kafka_Lunch.model.Order;
+import com.example.Kafka_Lunch.service.LoggingService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -20,6 +21,16 @@ public class KafkaLunchApplication {
         return args -> {
             System.out.println("Application started successfully!");
             // You can add test messages here if needed
+        };
+    }
+
+    @Bean
+    CommandLineRunner testLogging(LoggingService loggingService) {
+        return args -> {
+            System.out.println("Testing logging service...");
+            loggingService.logInfo("Application startup - test log message");
+            loggingService.logWarning("This is a warning test message");
+            loggingService.logError("This is an error test message");
         };
     }
 

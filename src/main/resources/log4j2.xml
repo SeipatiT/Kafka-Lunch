@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="WARN">
+<Configuration status="DEBUG" monitorInterval="30">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
@@ -7,12 +7,39 @@
         <Kafka name="Kafka" topic="application-logs">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
             <Property name="bootstrap.servers">localhost:9092</Property>
+            <Property name="compression.type">none</Property>
+            <Property name="sync">false</Property>
+            <Property name="retries">3</Property>
         </Kafka>
+        <!-- Fallback for Kafka appender if it fails -->
+        <Console name="FallbackConsole" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - KAFKA FAILED: %msg%n"/>
+        </Console>
     </Appenders>
     <Loggers>
+        <!-- Logger for Log4j internal logging to debug Kafka appender issues -->
+        <Logger name="org.apache.kafka" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="org.apache.logging.log4j.core.appender.kafka" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
         <Root level="info">
             <AppenderRef ref="Console"/>
-            <AppenderRef ref="Kafka"/>
+            <AppenderRef ref="Kafka">
+                <Filters>
+                    <!-- Only log to Kafka if level is INFO or higher -->
+                    <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+                </Filters>
+            </AppenderRef>
+            <!-- Fallback if Kafka fails -->
+            <AppenderRef ref="FallbackConsole">
+                <Filters>
+                    <!-- Only log to fallback if Kafka fails -->
+                    <MarkerFilter marker="KAFKA_FAIL" onMatch="ACCEPT" onMismatch="DENY"/>
+                </Filters>
+            </AppenderRef>
         </Root>
         <Logger name="com.example.Kafka_Lunch" level="debug" additivity="false">
             <AppenderRef ref="Console"/>
