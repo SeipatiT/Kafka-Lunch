@@ -22,6 +22,9 @@ public class KafkaProducerConfig {
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"); // Change this if needed
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        configProps.put(
+                ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
+                "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor");
 
         return new DefaultKafkaProducerFactory<>(configProps);
     }

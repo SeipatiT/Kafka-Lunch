@@ -133,7 +133,7 @@
         }
 
         // Call the API endpoint to get the current status
-        fetch(`/api/v1/messages/orderstatus?customerName=${encodeURIComponent(orderDetails.customerName)}&item=${encodeURIComponent(orderDetails.item)}`)
+        fetch(`/api/v1/order/status?customerName=${encodeURIComponent(orderDetails.customerName)}&item=${encodeURIComponent(orderDetails.item)}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to fetch order status');

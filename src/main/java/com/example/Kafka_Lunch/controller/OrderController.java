@@ -54,14 +54,21 @@ public class OrderController {
         return "Order for " + request.customerName() + " is being processed";
     }
 
-    // Add a new REST endpoint to get order status
+    // Keep existing methods
+
+    // Add the template method from MessageController
+    @GetMapping("/status-page")
+    public String statusPage() {
+        return "next"; // Return the template name without .html extension
+    }
+
+    // Consolidated order status endpoint
     @GetMapping("/status")
     @ResponseBody
-    @Operation(summary = "Get order status by parameters", description = "Get order status using query parameters")
-    public ResponseEntity<Order> getOrderStatusByParams(
+    @Operation(summary = "Get order status", description = "Get the status of an order by customer name and item")
+    public ResponseEntity<Order> getOrderStatus(
             @RequestParam String customerName,
             @RequestParam String item) {
-
         Order order = orderStatusService.getOrderStatus(customerName, item);
 
         if (order == null) {
@@ -77,6 +84,7 @@ public class OrderController {
 
         return ResponseEntity.ok(order);
     }
+
 
     @PostMapping("/bulk")
     @ResponseBody
