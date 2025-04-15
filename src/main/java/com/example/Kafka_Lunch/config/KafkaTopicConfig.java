@@ -23,4 +23,10 @@ public class KafkaTopicConfig {
         return TopicBuilder.name("order-status-updates").build();
     }
 
+    @Bean
+    public NewTopic logTopic() {
+        return TopicBuilder.name("application-logs").build();
+    }
+
+
 }

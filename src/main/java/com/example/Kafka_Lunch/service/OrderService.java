@@ -11,11 +11,12 @@ import java.util.UUID;
 public class OrderService {
     private static final String ORDER_TOPIC = "orders"; // Changed from "foodspot" to match your config
     private final KafkaTemplate<String, Order> kafkaTemplate;
+    private final LoggingService loggingService;
 
-    public OrderService(KafkaTemplate<String, Order> kafkaTemplate) {
+    public OrderService(KafkaTemplate<String, Order> kafkaTemplate, LoggingService loggingService) {
         this.kafkaTemplate = kafkaTemplate;
+        this.loggingService = loggingService;
     }
-
     public Order processOrder(OrderRequest request) {
         String orderId = UUID.randomUUID().toString();
         Order order = new Order(
@@ -27,7 +28,7 @@ public class OrderService {
         );
 
         kafkaTemplate.send(ORDER_TOPIC, order);
-        System.out.println("Order placed: " + order.getCustomerName() + " ordered " + order.getItem());
+        loggingService.logInfo("Order placed: " + order.getCustomerName() + " ordered " + order.getItem());
         return order;
     }
 }
